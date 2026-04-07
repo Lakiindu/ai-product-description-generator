@@ -9,26 +9,23 @@ type HistoryItem = {
   date: string;
 };
 
-export default function GeneratorForm() {
+type Props = {
+  onNewResult: (item: HistoryItem) => void;
+  selectedItem: HistoryItem | null;
+};
+
+export default function GeneratorForm({ onNewResult, selectedItem }: Props) {
   const [product, setProduct] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
-  const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  // 📥 Load history from localStorage
+  // 🚀 Sync selected history item into form
   useEffect(() => {
-    const saved = localStorage.getItem("history");
-    if (saved) {
-      setHistory(JSON.parse(saved));
+    if (selectedItem) {
+      setProduct(selectedItem.product);
+      setResult(selectedItem.result);
     }
-  }, []);
-
-  // 💾 Save history to localStorage
-  const saveToHistory = (item: HistoryItem) => {
-    const updated = [item, ...history].slice(0, 5); // keep last 5
-    setHistory(updated);
-    localStorage.setItem("history", JSON.stringify(updated));
-  };
+  }, [selectedItem]);
 
   // 🚀 GENERATE (REAL API)
   const handleGenerate = async () => {
@@ -58,9 +55,10 @@ export default function GeneratorForm() {
           date: new Date().toLocaleString(),
         };
 
-        saveToHistory(newItem);
+        // 💾 Send to parent (history manager)
+        onNewResult(newItem);
 
-        // ✨ clear input (pro UX)
+        // ✨ clear input for better UX
         setProduct("");
       } else {
         setResult("⚠️ Failed to generate description.");
@@ -71,11 +69,6 @@ export default function GeneratorForm() {
     }
 
     setLoading(false);
-  };
-
-  const loadFromHistory = (item: HistoryItem) => {
-    setProduct(item.product);
-    setResult(item.result);
   };
 
   return (
@@ -115,34 +108,6 @@ export default function GeneratorForm() {
           </div>
 
           <p className="text-slate-300 leading-relaxed">{result}</p>
-        </div>
-      )}
-
-      {/* 📜 HISTORY */}
-      {history.length > 0 && (
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold mb-3">Recent History</h3>
-
-          <div className="space-y-3">
-            {history.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => loadFromHistory(item)}
-                className="p-3 rounded-xl bg-slate-800 border border-slate-700 cursor-pointer hover:bg-slate-700 transition"
-              >
-                <div className="flex justify-between">
-                  <p className="font-medium">{item.product}</p>
-                  <span className="text-xs text-slate-400">
-                    {item.date}
-                  </span>
-                </div>
-
-                <p className="text-sm text-slate-400 mt-1 line-clamp-2">
-                  {item.result}
-                </p>
-              </div>
-            ))}
-          </div>
         </div>
       )}
     </div>
